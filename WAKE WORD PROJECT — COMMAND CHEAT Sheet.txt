@@ -1,0 +1,68 @@
+WAKE WORD PROJECT — COMMAND CHEAT SHEET
+═══════════════════════════════════
+Always start here: open File Explorer → go into voice_recognizer folder → click address bar → type powershell → Enter.
+
+ADDING NEW POSITIVE SAMPLES ("Hello Nova")
+
+
+Export new WhatsApp voice notes to your computer (they'll be .ogg)
+Move them into a new folder, e.g. raw_voice_notes\pos_batchX (change X each time: pos_batch3, pos_batch4...)
+Convert to .wav:
+
+powershellGet-ChildItem raw_voice_notes\pos_batchX\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "raw_voice_notes\pos_batchX\$($_.BaseName).wav"
+}
+
+Check your current highest number:
+
+powershelldir data\positive
+
+Copy into dataset (change $i to next number after your last file — e.g. if last was wake_036.wav, start at 37):
+
+powershell$i = 37
+Get-ChildItem raw_voice_notes\pos_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\positive\wake_{0:D3}.wav" -f $i)
+    $i++
+}
+
+ADDING NEW NEGATIVE SAMPLES (everything else)
+
+
+Export new WhatsApp voice notes (silence, random words, similar-sounding phrases)
+Move into a new folder, e.g. raw_voice_notes\neg_batchX
+Convert to .wav:
+
+powershellGet-ChildItem raw_voice_notes\neg_batchX\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "raw_voice_notes\neg_batchX\$($_.BaseName).wav"
+}
+
+Check current highest number:
+
+powershelldir data\negative
+
+Copy into dataset (adjust $i to next number, e.g. last was neg_018.wav, start at 19):
+
+powershell$i = 19
+Get-ChildItem raw_voice_notes\neg_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\negative\neg_{0:D3}.wav" -f $i)
+    $i++
+}
+
+RETRAIN THE MODEL (run every time after adding data)
+
+powershellpy extract_features.py
+py train.py
+Watch the final line: Precision / Recall / F1 — higher is better, closer to 1.00 is ideal.
+
+TEST THE MODEL ON A NEW CLIP
+
+
+Export/record a fresh test voice note (something NOT already in data/)
+Convert it (name it whatever, e.g. test1.ogg → test1.wav):
+
+powershellffmpeg -i raw_voice_notes\test1.ogg -ar 16000 -ac 1 test1.wav
+
+Run prediction:
+
+powershellpy predict.py test1.wav
+Reads: WAKE WORD DETECTED or not wake word, plus a confidence %.
