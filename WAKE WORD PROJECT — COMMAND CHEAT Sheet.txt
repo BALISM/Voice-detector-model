@@ -60,7 +60,7 @@ TEST THE MODEL ON A NEW CLIP
 Export/record a fresh test voice note (something NOT already in data/)
 Convert it (name it whatever, e.g. test1.ogg → test1.wav):
 
-powershellffmpeg -i raw_voice_notes\test1.ogg -ar 16000 -ac 1 test1.wav
+
 
 Run prediction:
 
