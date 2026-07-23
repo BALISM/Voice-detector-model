@@ -6,8 +6,17 @@ SAMPLE_RATE = 16000
 N_MFCC = 13
 FIXED_FRAMES = 63  # every sample will be padded/trimmed to this many time-windows
 
-def extract_mfcc(filepath, n_mfcc=N_MFCC, sample_rate=SAMPLE_RATE, is_training=False):
+def extract_mfcc(filepath, n_mfcc=N_MFCC, sample_rate=SAMPLE_RATE, is_training=False, augment=False):
     audio, sr = librosa.load(filepath, sr=sample_rate)
+    
+    if augment:
+        # Add random noise
+        noise = np.random.randn(len(audio))
+        audio = audio + 0.005 * noise
+        # Random pitch shift
+        n_steps = np.random.randint(-2, 3)
+        audio = librosa.effects.pitch_shift(audio, sr=sr, n_steps=n_steps)
+        
     audio, _ = librosa.effects.trim(audio, top_db=25)  # strip leading/trailing silence
     mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=n_mfcc)
 
@@ -39,10 +48,19 @@ def main():
             if not fname.endswith(".wav"):
                 continue
             path = os.path.join(folder, fname)
-            mfcc = extract_mfcc(path, is_training=True)
+            # Always add original
+            mfcc = extract_mfcc(path, is_training=True, augment=False)
             features.append(mfcc)
             labels.append(class_id)
-            print(f"Processed {path} -> shape {mfcc.shape}")
+            
+            # Add augmented versions
+            n_aug = 4 if class_id == 1 else 2
+            for _ in range(n_aug):
+                mfcc_aug = extract_mfcc(path, is_training=True, augment=True)
+                features.append(mfcc_aug)
+                labels.append(class_id)
+                
+            print(f"Processed {path} (with {n_aug} augmentations)")
 
     features = np.array(features)
     labels = np.array(labels)

@@ -30,7 +30,7 @@ def predict(filepath):
             if confidence > best_confidence:
                 best_confidence = confidence
 
-    label = "WAKE WORD DETECTED" if best_confidence > 0.5 else "not wake word"
+    label = "WAKE WORD DETECTED" if best_confidence > 0.85 else "not wake word"
     print(f"\nFile: {filepath}")
     print(f"Result: {label}")
     print(f"Confidence: {best_confidence*100:.1f}%")
