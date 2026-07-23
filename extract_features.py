@@ -8,6 +8,7 @@ FIXED_FRAMES = 63  # every sample will be padded/trimmed to this many time-windo
 
 def extract_mfcc(filepath, n_mfcc=N_MFCC, sample_rate=SAMPLE_RATE):
     audio, sr = librosa.load(filepath, sr=sample_rate)
+    audio, _ = librosa.effects.trim(audio, top_db=25)  # strip leading/trailing silence
     mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=n_mfcc)
 
     if mfccs.shape[1] < FIXED_FRAMES:
