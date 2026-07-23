@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,7 +12,7 @@ EPOCHS = 30
 LR = 0.001
 
 def main():
-    data = np.load("features.npz")
+    data = np.load(os.path.join("data", "features", "features.npz"))
     X, y = data["features"], data["labels"]
 
     X = torch.tensor(X).unsqueeze(1).float()
@@ -49,13 +50,13 @@ def main():
         if val_loss.item() < best_val_loss:
             best_val_loss = val_loss.item()
             best_epoch = epoch
-            torch.save(model.state_dict(), "wake_word_model.pt")
+            torch.save(model.state_dict(), os.path.join("models", "wake_word_model.pt"))
 
     print(f"\nBest epoch: {best_epoch} (val_loss={best_val_loss:.4f})")
 
     # Reload the best-saved version (not whatever the last epoch left in memory)
     # before running the final test evaluation
-    model.load_state_dict(torch.load("wake_word_model.pt"))
+    model.load_state_dict(torch.load(os.path.join("models", "wake_word_model.pt"), weights_only=True))
     model.eval()
     with torch.no_grad():
         predictions = model(X_test).argmax(dim=1)
@@ -64,7 +65,7 @@ def main():
     recall = recall_score(y_test, predictions, zero_division=0)
     f1 = f1_score(y_test, predictions, zero_division=0)
     print(f"Test results -> Precision: {precision:.2f}  Recall: {recall:.2f}  F1: {f1:.2f}")
-    print("Saved wake_word_model.pt (best validation epoch)")
+    print("Saved models/wake_word_model.pt (best validation epoch)")
 
 if __name__ == "__main__":
     main()

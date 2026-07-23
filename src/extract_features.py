@@ -34,7 +34,7 @@ def main():
     features, labels = [], []
 
     for label, class_id in [("positive", 1), ("negative", 0)]:
-        folder = os.path.join("data", label)
+        folder = os.path.join("data", "dataset", label)
         for fname in sorted(os.listdir(folder)):
             if not fname.endswith(".wav"):
                 continue
@@ -50,8 +50,8 @@ def main():
     print(f"\nTotal samples: {len(labels)}")
     print(f"Positive: {sum(labels == 1)}  Negative: {sum(labels == 0)}")
 
-    np.savez("features.npz", features=features, labels=labels)
-    print("Saved features.npz")
+    np.savez(os.path.join("data", "features", "features.npz"), features=features, labels=labels)
+    print("Saved data/features/features.npz")
 
 if __name__ == "__main__":
     main()

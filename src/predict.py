@@ -1,4 +1,5 @@
 import sys
+import os
 import torch
 import numpy as np
 from model import WakeWordCNN
@@ -6,7 +7,7 @@ from extract_features import extract_mfcc
 
 def predict(filepath):
     model = WakeWordCNN(n_mfcc=13, n_frames=63)
-    model.load_state_dict(torch.load("wake_word_model.pt", weights_only=True))
+    model.load_state_dict(torch.load(os.path.join("models", "wake_word_model.pt"), weights_only=True))
     model.eval()
 
     mfccs = extract_mfcc(filepath, is_training=False)
