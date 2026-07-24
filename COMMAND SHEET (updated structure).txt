@@ -1,0 +1,60 @@
+COMMAND SHEET (updated structure)
+═══════════════════════════════════
+
+Open PowerShell in the project root
+
+File Explorer → open the folder containing src, data, models, tests → address bar → powershell → Enter. Confirm:
+
+powershell
+dir
+
+You should see src, data, models, tests, docs, scripts.
+
+ADDING NEW POSITIVE SAMPLES
+powershell
+Get-ChildItem data\raw_voice_notes\pos_batchX\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "data\raw_voice_notes\pos_batchX\$($_.BaseName).wav"
+}
+powershell
+dir data\dataset\positive
+powershell
+$i = 40
+Get-ChildItem data\raw_voice_notes\pos_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\dataset\positive\wake_{0:D3}.wav" -f $i)
+    $i++
+}
+
+(You're currently at wake_039.wav, so start $i at 40, adjust if it's changed)
+
+ADDING NEW NEGATIVE SAMPLES
+powershell
+Get-ChildItem data\raw_voice_notes\neg_batchX\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "data\raw_voice_notes\neg_batchX\$($_.BaseName).wav"
+}
+powershell
+dir data\dataset\negative
+powershell
+$i = 67
+Get-ChildItem data\raw_voice_notes\neg_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\dataset\negative\neg_{0:D3}.wav" -f $i)
+    $i++
+}
+
+(You're at neg_066.wav, start at 67 — note neg_060.wav doesn't exist, that's fine, gaps don't matter)
+
+RETRAIN (run every time after adding data)
+powershell
+py src\extract_features.py
+py src\train.py
+
+extract_features.py now also auto-generates augmented variants (pitch/speed/volume/noise shifted copies) of each file, so your printed total sample count will be much higher than your raw file count — that's expected, not a bug.
+
+TEST A SINGLE FILE
+powershell
+py src\predict.py tests\your_file.wav
+
+Place any new test clip inside the tests\ folder first.
+
+TEST EVERY FILE IN tests\ AT ONCE (new script)
+powershell
+py src\test_all.py
