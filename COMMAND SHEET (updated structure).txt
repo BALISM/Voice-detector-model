@@ -1,56 +1,73 @@
 COMMAND SHEET (updated structure)
 ═══════════════════════════════════
 
-Open PowerShell in the project root
-
-File Explorer → open the folder containing src, data, models, tests → address bar → powershell → Enter. Confirm:
-
-powershell
+Open PowerShell in the project root:
+File Explorer -> open folder containing src, data, models, tests -> address bar -> type 'powershell' -> Enter. Confirm:
 dir
 
 You should see src, data, models, tests, docs, scripts.
+
+
+CONVERTING & PREPARING TEST CLIPS (in tests\)
+If you put non-WAV voice notes (.ogg, .mp3, .m4a) into tests\, convert them to .wav first:
+
+powershell
+Get-ChildItem tests\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "tests\$($_.BaseName).wav"
+}
+
 
 ADDING NEW POSITIVE SAMPLES
 powershell
 Get-ChildItem data\raw_voice_notes\pos_batchX\*.ogg | ForEach-Object {
     ffmpeg -i $_.FullName -ar 16000 -ac 1 "data\raw_voice_notes\pos_batchX\$($_.BaseName).wav"
 }
-powershell
+
+Check current dataset files:
 dir data\dataset\positive
-powershell
-$i = 40
+
+Copy new files into positive dataset (Currently at wake_067.wav, so start $i at 68):
+$i = 68
 Get-ChildItem data\raw_voice_notes\pos_batchX\*.wav | ForEach-Object {
     Copy-Item $_.FullName -Destination ("data\dataset\positive\wake_{0:D3}.wav" -f $i)
     $i++
 }
 
-(You're currently at wake_039.wav, so start $i at 40, adjust if it's changed)
 
 ADDING NEW NEGATIVE SAMPLES
 powershell
 Get-ChildItem data\raw_voice_notes\neg_batchX\*.ogg | ForEach-Object {
     ffmpeg -i $_.FullName -ar 16000 -ac 1 "data\raw_voice_notes\neg_batchX\$($_.BaseName).wav"
 }
-powershell
+
+Check current dataset files:
 dir data\dataset\negative
-powershell
 
+Copy new files into negative dataset (Currently at neg_157.wav, so start $i at 158):
+$i = 158
+Get-ChildItem data\raw_voice_notes\neg_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\dataset\negative\neg_{0:D3}.wav" -f $i)
+    $i++
+}
 
-(You're at neg_066.wav, start at 67 — note neg_060.wav doesn't exist, that's fine, gaps don't matter)
 
 RETRAIN (run every time after adding data)
 powershell
 py src\extract_features.py
 py src\train.py
 
-extract_features.py now also auto-generates augmented variants (pitch/speed/volume/noise shifted copies) of each file, so your printed total sample count will be much higher than your raw file count — that's expected, not a bug.
+Note: extract_features.py auto-generates augmented variants (pitch/speed/volume/noise shifted copies) of each sample, so total feature count will be higher than raw file count.
+
 
 TEST A SINGLE FILE
 powershell
+# To test a file in tests\ folder:
 py src\predict.py tests\new_test2.wav
 
-Place any new test clip inside the tests\ folder first.
+# To test a sample in dataset:
+py src\predict.py data\dataset\positive\wake_052.wav
 
-TEST EVERY FILE IN tests\ AT ONCE (new script)
+
+TEST EVERY FILE IN tests\ AT ONCE
 powershell
 py src\test_all.py

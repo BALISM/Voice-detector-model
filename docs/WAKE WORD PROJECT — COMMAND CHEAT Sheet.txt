@@ -2,67 +2,81 @@ WAKE WORD PROJECT — COMMAND CHEAT SHEET
 ═══════════════════════════════════
 Always start here: open File Explorer → go into voice_recognizer folder → click address bar → type powershell → Enter.
 
+CONVERTING TEST CLIPS IN tests\
+Export/record test voice notes (they will be .ogg, .mp3, or .m4a).
+Move them into the tests\ folder, then convert them to .wav:
+
+powershell
+Get-ChildItem tests\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "tests\$($_.BaseName).wav"
+}
+
+
 ADDING NEW POSITIVE SAMPLES ("Hello Nova")
-
-
 Export new WhatsApp voice notes to your computer (they'll be .ogg)
-Move them into a new folder, e.g. raw_voice_notes\pos_batchX (change X each time: pos_batch3, pos_batch4...)
+Move them into a new folder, e.g. data\raw_voice_notes\pos_batchX (pos_batch3, pos_batch4...)
 Convert to .wav:
 
-powershellGet-ChildItem raw_voice_notes\pos_batchX\*.ogg | ForEach-Object {
-    ffmpeg -i $_.FullName -ar 16000 -ac 1 "raw_voice_notes\pos_batchX\$($_.BaseName).wav"
+powershell
+Get-ChildItem data\raw_voice_notes\pos_batchX\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "data\raw_voice_notes\pos_batchX\$($_.BaseName).wav"
 }
 
-Check your current highest number:
+Check current dataset files:
+powershell
+dir data\dataset\positive
 
-powershelldir data\positive
-
-Copy into dataset (change $i to next number after your last file — e.g. if last was wake_036.wav, start at 37):
-
-powershell$i = 37
-Get-ChildItem raw_voice_notes\pos_batchX\*.wav | ForEach-Object {
-    Copy-Item $_.FullName -Destination ("data\positive\wake_{0:D3}.wav" -f $i)
+Copy into dataset (currently at wake_067.wav, start $i at 68):
+powershell
+$i = 68
+Get-ChildItem data\raw_voice_notes\pos_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\dataset\positive\wake_{0:D3}.wav" -f $i)
     $i++
 }
+
 
 ADDING NEW NEGATIVE SAMPLES (everything else)
-
-
-Export new WhatsApp voice notes (silence, random words, similar-sounding phrases)
-Move into a new folder, e.g. raw_voice_notes\neg_batchX
+Export new WhatsApp voice notes (silence, random words, background noise)
+Move into a new folder, e.g. data\raw_voice_notes\neg_batchX
 Convert to .wav:
 
-powershellGet-ChildItem raw_voice_notes\neg_batchX\*.ogg | ForEach-Object {
-    ffmpeg -i $_.FullName -ar 16000 -ac 1 "raw_voice_notes\neg_batchX\$($_.BaseName).wav"
+powershell
+Get-ChildItem data\raw_voice_notes\neg_batchX\*.ogg | ForEach-Object {
+    ffmpeg -i $_.FullName -ar 16000 -ac 1 "data\raw_voice_notes\neg_batchX\$($_.BaseName).wav"
 }
 
-Check current highest number:
+Check current dataset files:
+powershell
+dir data\dataset\negative
 
-powershelldir data\negative
-
-Copy into dataset (adjust $i to next number, e.g. last was neg_018.wav, start at 19):
-
-powershell$i = 19
-Get-ChildItem raw_voice_notes\neg_batchX\*.wav | ForEach-Object {
-    Copy-Item $_.FullName -Destination ("data\negative\neg_{0:D3}.wav" -f $i)
+Copy into dataset (currently at neg_157.wav, start $i at 158):
+powershell
+$i = 158
+Get-ChildItem data\raw_voice_notes\neg_batchX\*.wav | ForEach-Object {
+    Copy-Item $_.FullName -Destination ("data\dataset\negative\neg_{0:D3}.wav" -f $i)
     $i++
 }
 
-RETRAIN THE MODEL (run every time after adding data)
 
-powershellpy extract_features.py
-py train.py
+RETRAIN THE MODEL (run every time after adding data)
+powershell
+py src\extract_features.py
+py src\train.py
+
 Watch the final line: Precision / Recall / F1 — higher is better, closer to 1.00 is ideal.
 
-TEST THE MODEL ON A NEW CLIP
+
+TEST THE MODEL ON A SINGLE CLIP
+powershell
+# Test a file in tests\ folder:
+py src\predict.py tests\new_test1.wav
+
+# Test a file in dataset:
+py src\predict.py data\dataset\positive\wake_052.wav
+
+Reads: WAKE WORD DETECTED or not wake word, plus confidence %.
 
 
-Export/record a fresh test voice note (something NOT already in data/)
-Convert it (name it whatever, e.g. test1.ogg → test1.wav):
-
-
-
-Run prediction:
-
-powershellpy predict.py test1.wav
-Reads: WAKE WORD DETECTED or not wake word, plus a confidence %.
+TEST ALL CLIPS IN tests\ AT ONCE
+powershell
+py src\test_all.py

@@ -2,12 +2,19 @@ import os
 import numpy as np
 import librosa
 
+import warnings
+
 SAMPLE_RATE = 16000
 N_MFCC = 13
 FIXED_FRAMES = 63  # every sample will be padded/trimmed to this many time-windows
 
 def extract_mfcc(filepath, n_mfcc=N_MFCC, sample_rate=SAMPLE_RATE, is_training=False, augment=False):
-    audio, sr = librosa.load(filepath, sr=sample_rate)
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"File not found: '{filepath}'")
+        
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        audio, sr = librosa.load(filepath, sr=sample_rate)
     
     if augment:
         # Add random noise

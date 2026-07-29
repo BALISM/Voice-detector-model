@@ -39,8 +39,13 @@ def predict_one(model, filepath):
     return best_confidence
 
 def main():
+    model_path = os.path.join("models", "wake_word_model.pt")
+    if not os.path.exists(model_path):
+        print(f"Model file '{model_path}' not found. Please train the model first.")
+        sys.exit(1)
+
     model = WakeWordCNN(n_mfcc=39, n_frames=63)
-    model.load_state_dict(torch.load(os.path.join("models", "wake_word_model.pt"), weights_only=True))
+    model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
 
     test_dir = "tests"
@@ -48,25 +53,36 @@ def main():
         print(f"No '{test_dir}' directory found. Place .wav files there.")
         sys.exit(1)
 
-    files = sorted([f for f in os.listdir(test_dir) if f.endswith(".wav")])
-    if not files:
-        print(f"No .wav files found in '{test_dir}/'")
+    all_test_files = os.listdir(test_dir)
+    wav_files = sorted([f for f in all_test_files if f.lower().endswith(".wav")])
+    non_wav_files = sorted([f for f in all_test_files if f.lower().endswith((".ogg", ".mp3", ".m4a", ".flac", ".aac", ".wma"))])
+
+    if non_wav_files:
+        print(f"\n[NOTICE] Found {len(non_wav_files)} non-WAV audio clip(s) in '{test_dir}/': {', '.join(non_wav_files)}")
+        print("To convert them to .wav, run this PowerShell command:")
+        print("  Get-ChildItem tests\\*.ogg | ForEach-Object { ffmpeg -i $_.FullName -ar 16000 -ac 1 \"tests\\$($_.BaseName).wav\" }\n")
+
+    if not wav_files:
+        print(f"No .wav files found in '{test_dir}/'. Please convert your test clips to .wav format first.")
         sys.exit(1)
 
-    print(f"\n{'='*60}")
-    print(f"  BATCH TEST — {len(files)} clips  (threshold: {THRESHOLD*100:.0f}%)")
-    print(f"{'='*60}\n")
-    print(f"  {'File':<25} {'Result':<22} {'Confidence':>10}")
-    print(f"  {'-'*25} {'-'*22} {'-'*10}")
+    print(f"\n{'='*65}")
+    print(f"  BATCH TEST -- {len(wav_files)} clips  (threshold: {THRESHOLD*100:.0f}%)")
+    print(f"{'='*65}\n")
+    print(f"  {'File':<25} {'Marker':<6} {'Result':<22} {'Confidence':>10}")
+    print(f"  {'-'*25} {'-'*6} {'-'*22} {'-'*10}")
 
-    for fname in files:
+    for fname in wav_files:
         filepath = os.path.join(test_dir, fname)
-        conf = predict_one(model, filepath)
-        label = "WAKE WORD DETECTED" if conf > THRESHOLD else "not wake word"
-        marker = "✓" if conf > THRESHOLD else "✗"
-        print(f"  {fname:<25} {marker} {label:<20} {conf*100:>8.1f}%")
+        try:
+            conf = predict_one(model, filepath)
+            label = "WAKE WORD DETECTED" if conf > THRESHOLD else "not wake word"
+            marker = "[OK]" if conf > THRESHOLD else "[X]"
+            print(f"  {fname:<25} {marker:<6} {label:<22} {conf*100:>8.1f}%")
+        except Exception as e:
+            print(f"  {fname:<25} [ERR] Error processing file: {e}")
 
-    print(f"\n{'='*60}\n")
+    print(f"\n{'='*65}\n")
 
 if __name__ == "__main__":
     main()
