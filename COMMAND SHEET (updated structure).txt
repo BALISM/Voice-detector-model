@@ -51,7 +51,7 @@ extract_features.py now also auto-generates augmented variants (pitch/speed/volu
 
 TEST A SINGLE FILE
 powershell
-py src\predict.py tests\your_file.wav
+py src\predict.py tests\new_test2.wav
 
 Place any new test clip inside the tests\ folder first.
 
